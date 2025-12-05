@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="es" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registro Médico - Enfermería Escolar</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+      body {
+        min-height: 100vh;
+        background-color: #f8f9fa;
+      }
+
+      .navbar { background-color: #007bff; }
+      .navbar-brand { color: #fff !important; font-weight: bold; }
+
+      .sidebar {
+        position: fixed;
+        top: 56px;
+        left: 0;
+        height: calc(100% - 56px);
+        width: 240px;
+        background-color: #0d6efd;
+        color: #fff;
+        padding-top: 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.9);
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        border-radius: 0 25px 25px 0;
+        margin-right: 10px;
+        transition: background 0.3s;
+      }
+
+      .sidebar .nav-link i { margin-right: 10px; font-size: 1.2rem; }
+      .sidebar .nav-link.active { background-color: rgba(255, 255, 255, 0.3); color: #fff; }
+
+      .logout { padding: 1rem 0; }
+      .logout-link {
+        display: flex; align-items: center; color: #fff; text-decoration: none;
+        padding: 10px 20px; border-radius: 0 25px 25px 0; transition: background 0.3s;
+      }
+      .logout-link:hover { background-color: rgba(255, 255, 255, 0.15); }
+
+      .content { margin-left: 240px; margin-top: 56px; padding: 2rem; }
+
+      .card { border-radius: 10px; }
+      .btn-exportar { background-color: #dc3545; color: #fff; }
+      .btn-exportar:hover { background-color: #bb2d3b; }
+
+      .ficha-header { display: flex; align-items: center; margin-bottom: 1rem; }
+      .ficha-header img { width: 70px; margin-right: 15px; }
+      .ficha-header h5 { margin: 0; font-weight: bold; }
+      .form-label { font-weight: 500; }
+      hr { border-top: 2px solid #007bff; opacity: 0.6; }
+      
+      /* Estilos para el formulario de accidente */
+      .accidente-section { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+      .accidente-section h6 { color: #0d6efd; font-weight: bold; }
+      .inline-group { display: flex; gap: 10px; }
+      .inline-group > div { flex: 1; }
+      .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+      .checkbox-item { display: flex; align-items: center; gap: 5px; }
+      .signature-line { display: inline-block; width: 300px; border-bottom: 1px solid #000; margin-top: 40px; }
+      .section-title { background-color: #e9ecef; padding: 8px; border-radius: 5px; margin-top: 20px; }
+      .select-compact { max-width: 200px; }
+      
+      /* Estilos para acciones en tabla */
+      .acciones-cell { white-space: nowrap; }
+      .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+    </style>
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Enfermería Escolar</a>
+      </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div>
+        <ul class="nav flex-column mb-auto">
+          <li><a class="nav-link" href="dashboard.html"><i class="bi bi-house"></i> Dashboard</a></li>
+          <li><a class="nav-link" href="estadisticas.html"><i class="bi bi-bar-chart"></i> Estadísticas</a></li>
+          <li><a class="nav-link" href="estudiantes.html"><i class="bi bi-person"></i> Estudiantes</a></li>
+          <li><a class="nav-link active" href="registro_medico.html"><i class="bi bi-journal-medical"></i> Registro Médico</a></li>
+        </ul>
+      </div>
+
+      <div class="logout">
+        <a class="logout-link" href="../Iniciar Sesion/index.html">
+          <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+        </a>
+      </div>
+    </div>
+
+    <!-- Contenido principal -->
+    <main class="content">
+      <h1 class="h2 mb-4">Registro Médico</h1>
+
+      <!-- Selección de curso -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Seleccionar curso</h5>
+          <select class="form-select w-50 mb-3" id="selectCurso">
+            <option value="">Seleccionar...</option>
+            <option value="3° Programación">3° Programación</option>
+            <option value="5° Básico">5° Básico</option>
+            <option value="1° Básico">1° Básico</option>
+          </select>
+
+          <div id="listaEstudiantes" class="mt-3"></div>
+        </div>
+      </div>
+
+      <!-- Registros recientes -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">Registros recientes</h5>
+            <button class="btn btn-exportar btn-sm" id="btnExportarPDF">
+              <i class="bi bi-file-earmark-pdf"></i> Exportar todo a PDF
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-striped align-middle" id="tablaRegistros">
+              <thead class="table-primary">
+                <tr>
+                  <th>Nombre</th>
+                  <th>Curso</th>
+                  <th>Fecha</th>
+                  <th>Comuna</th>
+                  <th>Ciudad</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Modal Ficha médica -->
+    <div class="modal fade" id="modalFicha" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">Ficha Médica Individual - Declaración de Accidente Escolar</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+            <div class="ficha-header">
+              <img src="../logo liceo.png" alt="Logo">
+              <div>
+                <h5>DECLARACIÓN INDIVIDUAL DE ACCIDENTE ESCOLAR</h5>
+                <p class="mb-0 fst-italic">Antes de registrar los datos lea las instrucciones al reverso.</p>
+              </div>
+            </div>
+
+            <form id="formFicha">
+              <!-- A. INDIVIDUALIZACIÓN DEL ESTABLECIMIENTO -->
+              <div class="section-title">
+                <h6 class="mb-0">A. INDIVIDUALIZACIÓN DEL ESTABLECIMIENTO</h6>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-8">
+                  <label class="form-label">NOMBRE DEL ESTABLECIMIENTO</label>
+                  <input type="text" class="form-control" id="nombreEstablecimiento" value="Liceo Bicentenario de Excelencia Técnico Puente Rubie" readonly>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">CIUDAD</label>
+                  <input type="text" class="form-control" id="ciudadEstablecimiento" value="Chillán" readonly>
+                </div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">COMUNA</label>
+                  <input type="text" class="form-control" id="comunaEstablecimiento" value="San Nicolás" readonly>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">FECHA REGISTRO de los DATOS:</label>
+                  <input type="date" class="form-control" id="fechaRegistro">
+                </div>
+              </div>
+
+              <!-- B. DATOS DEL ESTUDIANTE -->
+              <div class="section-title">
+                <h6 class="mb-0">B. DATOS DEL ESTUDIANTE</h6>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-3">
+                  <label class="form-label">CURSO</label>
+                  <input type="text" class="form-control" id="cursoEstudiante" readonly>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">HORARIO</label>
+                  <input type="text" class="form-control" id="horarioEstudiante">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">SEXO</label>
+                  <select class="form-select select-compact" id="sexoEstudiante">
+                    <option value="">Seleccionar...</option>
+                    <option value="M">M</option>
+                    <option value="F">F</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">AÑO NACIMIENTO</label>
+                  <input type="number" class="form-control" id="anoNacimiento" min="1900" max="2023">
+                </div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">APELLIDO PATERNO</label>
+                  <input type="text" class="form-control" id="apellidoPaterno" readonly>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">APELLIDO MATERNO</label>
+                  <input type="text" class="form-control" id="apellidoMaterno" readonly>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">NOMBRES</label>
+                  <input type="text" class="form-control" id="nombresEstudiante" readonly>
+                </div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-2">
+                  <label class="form-label">EDAD</label>
+                  <input type="number" class="form-control" id="edadEstudiante" readonly>
+                </div>
+              </div>
+
+              <div class="section-title">
+                <h6 class="mb-0">RESIDENCIA HABITUAL:</h6>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-3">
+                  <label class="form-label">CALLE</label>
+                  <input type="text" class="form-control" id="calleResidencia">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">NUMERO</label>
+                  <input type="text" class="form-control" id="numeroResidencia">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">POBLACION/VILLA</label>
+                  <input type="text" class="form-control" id="poblacionResidencia">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">COMUNA</label>
+                  <input type="text" class="form-control" id="comunaResidencia">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">CIUDAD</label>
+                  <input type="text" class="form-control" id="ciudadResidencia">
+                </div>
+              </div>
+
+              <!-- C. INFORME SOBRE EL ACCIDENTE -->
+              <div class="section-title">
+                <h6 class="mb-0">C. INFORME SOBRE EL ACCIDENTE (FECHA, HORA Y DÍA DE LA SEMANA EN QUE SE ACCIDENTÓ)</h6>
+              </div>
+              
+              <div class="inline-group mb-3">
+                <div class="form-group">
+                  <label class="form-label">HORA/MIN</label>
+                  <input type="time" class="form-control" id="horaAccidente">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">AÑO</label>
+                  <input type="number" class="form-control" id="anoAccidente" min="2020" max="2030">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">MES</label>
+                  <input type="number" class="form-control" id="mesAccidente" min="1" max="12">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">DÍA</label>
+                  <input type="number" class="form-control" id="diaAccidente" min="1" max="31">
+                </div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">DÍA ACCIDENTE</label>
+                  <select class="form-select" id="diaAccidenteSelect">
+                    <option value="">Seleccionar día...</option>
+                    <option value="1">LUNES</option>
+                    <option value="2">MARTES</option>
+                    <option value="3">MIÉRCOLES</option>
+                    <option value="4">JUEVES</option>
+                    <option value="5">VIERNES</option>
+                    <option value="6">SÁBADO</option>
+                    <option value="7">DOMINGO</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">TIPO DE ACCIDENTE</label>
+                  <select class="form-select" id="tipoAccidenteSelect">
+                    <option value="">Seleccionar tipo...</option>
+                    <option value="trayecto">DE TRAYECTO</option>
+                    <option value="escuela">EN LA ESCUELA</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group mb-3">
+                <label class="form-label">TESTIGOS: (EN CASO DE TRAYECTO)</label>
+                <input type="text" class="form-control mb-2" id="testigo1" placeholder="NOMBRE - APELLIDO">
+                <input type="text" class="form-control mb-2" id="testigo2" placeholder="NOMBRE - APELLIDO">
+                <input type="text" class="form-control mb-2" id="testigo3" placeholder="NOMBRE - APELLIDO">
+                <input type="text" class="form-control mb-2" id="testigo4" placeholder="NOMBRE - APELLIDO">
+              </div>
+              
+              <div class="form-group mb-3">
+                <label class="form-label">CIRCUNSTANCIA DEL ACCIDENTE (DESCRIBA CÓMO OCURRIÓ - CAUSAL)</label>
+                <textarea class="form-control" id="circunstancias" rows="4"></textarea>
+              </div>
+
+              <!-- D. NATURALEZA Y CONSECUENCIA DEL ACCIDENTE -->
+              <div class="section-title">
+                <h6 class="mb-0">D. NATURALEZA Y CONSECUENCIA DEL ACCIDENTE</h6>
+              </div>
+              
+              <div class="inline-group mb-3">
+                <div class="form-group">
+                  <label class="form-label">ESTABLECIMIENTO ASISTENCIAL</label>
+                  <input type="text" class="form-control" id="establecimientoAsistencial">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">S.S. CÓDIGO</label>
+                  <input type="text" class="form-control" id="ssCodigo">
+                </div>
+              </div>
+              
+              <div class="form-group mb-3">
+                <label class="form-label">DIAGNÓSTICO MÉDICO</label>
+                <textarea class="form-control" id="diagnosticoMedico" rows="3"></textarea>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">PARTE DEL CUERPO AFECTADA</label>
+                  <input type="text" class="form-control" id="parteCuerpoAfectada">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">HOSPITALIZACIÓN</label>
+                  <select class="form-select" id="hospitalizacionSelect">
+                    <option value="">Seleccionar...</option>
+                    <option value="1">SI</option>
+                    <option value="2">NO</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">TOTAL DÍAS HOSP.</label>
+                  <input type="number" class="form-control" id="totalDiasHospitalizacion" min="0">
+                </div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">INCAPACIDAD</label>
+                  <select class="form-select" id="incapacidadSelect">
+                    <option value="">Seleccionar...</option>
+                    <option value="1">SI</option>
+                    <option value="2">NO</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">TOTAL DÍAS INCAPACIDAD</label>
+                  <input type="number" class="form-control" id="totalDiasIncapacidad" min="0">
+                </div>
+              </div>
+              
+              <div class="inline-group mb-3">
+                <div class="form-group">
+                  <label class="form-label">TIPO DE INCAPACIDAD:</label>
+                  <select class="form-select" id="tipoIncapacidad">
+                    <option value="">Seleccione...</option>
+                    <option value="1">LEVE TEMPORAL</option>
+                    <option value="3">INVALIDEZ PARCIAL</option>
+                    <option value="4">INVALIDEZ TOTAL</option>
+                    <option value="5">GRAN INVALIDEZ</option>
+                    <option value="6">MUERTE</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CAUSA DE CIERRE DEL CASO</label>
+                  <select class="form-select" id="causaCierre">
+                    <option value="">Seleccione...</option>
+                    <option value="1">ALTA MÉDICA</option>
+                    <option value="2">INVALIDEZ</option>
+                    <option value="3">ABANDONO DE TRATAMIENTO</option>
+                    <option value="4">MUERTE</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group mb-3">
+                <label class="form-label">FECHA CIERRE DEL CASO</label>
+                <div class="inline-group">
+                  <div class="form-group">
+                    <label class="form-label">AÑO</label>
+                    <input type="number" class="form-control" id="anoCierre" min="2020" max="2030">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">MES</label>
+                    <input type="number" class="form-control" id="mesCierre" min="1" max="12">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">DÍA</label>
+                    <input type="number" class="form-control" id="diaCierre" min="1" max="31">
+                  </div>
+                </div>
+              </div>
+              
+              <div class="text-end mt-4">
+                <button type="button" class="btn btn-danger me-2" id="btnExportarFicha">
+                  <i class="bi bi-file-earmark-pdf"></i> Exportar ficha en PDF
+                </button>
+                <button type="submit" class="btn btn-success">Guardar ficha</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Datos de estudiantes
+      const estudiantesPorCurso = {
+        "3° Programación": [
+          { 
+            nombre: "Franco", 
+            paterno: "Pastene", 
+            materno: "Rojas", 
+            edad: 17, 
+            genero: "M", 
+            anoNacimiento: 2007,
+            direccion: { 
+              calle: "Los Robles", 
+              numero: "123", 
+              poblacion: "Centro", 
+              comuna: "Chillán", 
+              ciudad: "Chillán" 
+            } 
+          },
+          { 
+            nombre: "Camila", 
+            paterno: "Soto", 
+            materno: "Guzmán", 
+            edad: 17, 
+            genero: "F", 
+            anoNacimiento: 2007,
+            direccion: { 
+              calle: "Las Rosas", 
+              numero: "456", 
+              poblacion: "Portal", 
+              comuna: "Chillán", 
+              ciudad: "Chillán" 
+            } 
+          }
+        ],
+        "5° Básico": [
+          { 
+            nombre: "Ana", 
+            paterno: "López", 
+            materno: "Martínez", 
+            edad: 11, 
+            genero: "F", 
+            anoNacimiento: 2013,
+            direccion: { 
+              calle: "Los Olmos", 
+              numero: "321", 
+              poblacion: "Norte", 
+              comuna: "Chillán", 
+              ciudad: "Chillán" 
+            } 
+          }
+        ]
+      };
+
+      const selectCurso = document.getElementById('selectCurso');
+      const listaEstudiantes = document.getElementById('listaEstudiantes');
+      const modalFicha = new bootstrap.Modal(document.getElementById('modalFicha'));
+      const tablaBody = document.querySelector('#tablaRegistros tbody');
+      const formFicha = document.getElementById('formFicha');
+      
+      let registrosCompletos = [];
+      let estudianteActual = {};
+      let editandoRegistro = false;
+      let registroEditando = null;
+
+      // Event Listeners
+      selectCurso.addEventListener('change', cargarEstudiantes);
+      formFicha.addEventListener('submit', guardarFicha);
+      document.getElementById("btnExportarFicha").addEventListener("click", exportarFichaActual);
+      document.getElementById("btnExportarPDF").addEventListener("click", exportarTodosPDF);
+
+      // Funciones principales
+      function cargarEstudiantes() {
+        listaEstudiantes.innerHTML = '';
+        const curso = selectCurso.value;
+        if (!curso) return;
+        
+        estudiantesPorCurso[curso].forEach(est => {
+          const div = document.createElement('div');
+          div.className = 'd-flex justify-content-between align-items-center border rounded p-2 mb-2 bg-light';
+          div.innerHTML = `
+            <span><i class="bi bi-person"></i> ${est.nombre} ${est.paterno} ${est.materno}</span>
+            <button class="btn btn-sm btn-primary"><i class="bi bi-plus-circle"></i> Crear ficha</button>
+          `;
+          div.querySelector('button').addEventListener('click', () => abrirFicha(est, curso));
+          listaEstudiantes.appendChild(div);
+        });
+      }
+
+      function abrirFicha(est, curso, registro = null) {
+        estudianteActual = est;
+        editandoRegistro = registro !== null;
+        registroEditando = registro;
+        
+        // Limpiar formulario primero
+        formFicha.reset();
+        
+        // Autocompletar datos del estudiante 
+        document.getElementById('cursoEstudiante').value = curso;
+        document.getElementById('apellidoPaterno').value = est.paterno;
+        document.getElementById('apellidoMaterno').value = est.materno;
+        document.getElementById('nombresEstudiante').value = est.nombre;
+        document.getElementById('edadEstudiante').value = est.edad;
+        document.getElementById('anoNacimiento').value = est.anoNacimiento;
+        
+        // Autocompletar género
+        document.getElementById('sexoEstudiante').value = est.genero;
+        
+        // Autocompletar dirección
+        document.getElementById('calleResidencia').value = est.direccion.calle || "";
+        document.getElementById('numeroResidencia').value = est.direccion.numero || "";
+        document.getElementById('poblacionResidencia').value = est.direccion.poblacion || "";
+        document.getElementById('comunaResidencia').value = est.direccion.comuna || "";
+        document.getElementById('ciudadResidencia').value = est.direccion.ciudad || "";
+        
+        // Si estamos editando, cargar los datos del registro existente
+        if (editandoRegistro && registro) {
+          cargarDatosRegistro(registro);
+        } else {
+          // Establecer fecha actual para nuevo registro
+          const hoy = new Date().toISOString().split('T')[0];
+          document.getElementById('fechaRegistro').value = hoy;
+        }
+        
+        modalFicha.show();
+      }
+
+      function cargarDatosRegistro(registro) {
+        // Cargar todos los datos del registro en el formulario
+        document.getElementById('fechaRegistro').value = registro.fechaRegistro || "";
+        document.getElementById('horarioEstudiante').value = registro.horario || "";
+        
+        // Datos del accidente
+        document.getElementById('horaAccidente').value = registro.horaAccidente || "";
+        document.getElementById('anoAccidente').value = registro.anoAccidente || "";
+        document.getElementById('mesAccidente').value = registro.mesAccidente || "";
+        document.getElementById('diaAccidente').value = registro.diaAccidente || "";
+        document.getElementById('diaAccidenteSelect').value = registro.diaAccidenteSelect || "";
+        document.getElementById('tipoAccidenteSelect').value = registro.tipoAccidenteSelect || "";
+        
+        // Testigos
+        document.getElementById('testigo1').value = registro.testigo1 || "";
+        document.getElementById('testigo2').value = registro.testigo2 || "";
+        document.getElementById('testigo3').value = registro.testigo3 || "";
+        document.getElementById('testigo4').value = registro.testigo4 || "";
+        document.getElementById('circunstancias').value = registro.circunstancias || "";
+        
+        // Datos médicos
+        document.getElementById('establecimientoAsistencial').value = registro.establecimientoAsistencial || "";
+        document.getElementById('ssCodigo').value = registro.ssCodigo || "";
+        document.getElementById('diagnosticoMedico').value = registro.diagnosticoMedico || "";
+        document.getElementById('parteCuerpoAfectada').value = registro.parteCuerpoAfectada || "";
+        document.getElementById('hospitalizacionSelect').value = registro.hospitalizacionSelect || "";
+        document.getElementById('totalDiasHospitalizacion').value = registro.totalDiasHospitalizacion || "";
+        document.getElementById('incapacidadSelect').value = registro.incapacidadSelect || "";
+        document.getElementById('totalDiasIncapacidad').value = registro.totalDiasIncapacidad || "";
+        document.getElementById('tipoIncapacidad').value = registro.tipoIncapacidad || "";
+        document.getElementById('causaCierre').value = registro.causaCierre || "";
+        document.getElementById('anoCierre').value = registro.anoCierre || "";
+        document.getElementById('mesCierre').value = registro.mesCierre || "";
+        document.getElementById('diaCierre').value = registro.diaCierre || "";
+      }
+
+      function obtenerDatosFormulario() {
+        return {
+          // Datos básicos del estudiante
+          nombres: document.getElementById('nombresEstudiante').value,
+          paterno: document.getElementById('apellidoPaterno').value,
+          materno: document.getElementById('apellidoMaterno').value,
+          curso: document.getElementById('cursoEstudiante').value,
+          fechaRegistro: document.getElementById('fechaRegistro').value,
+          comuna: document.getElementById('comunaResidencia').value,
+          ciudad: document.getElementById('ciudadResidencia').value,
+          
+          // Datos adicionales
+          horario: document.getElementById('horarioEstudiante').value,
+          sexo: document.getElementById('sexoEstudiante').value,
+          anoNacimiento: document.getElementById('anoNacimiento').value,
+          edad: document.getElementById('edadEstudiante').value,
+          calle: document.getElementById('calleResidencia').value,
+          numero: document.getElementById('numeroResidencia').value,
+          poblacion: document.getElementById('poblacionResidencia').value,
+          
+          // Datos del accidente
+          horaAccidente: document.getElementById('horaAccidente').value,
+          anoAccidente: document.getElementById('anoAccidente').value,
+          mesAccidente: document.getElementById('mesAccidente').value,
+          diaAccidente: document.getElementById('diaAccidente').value,
+          diaAccidenteSelect: document.getElementById('diaAccidenteSelect').value,
+          tipoAccidenteSelect: document.getElementById('tipoAccidenteSelect').value,
+          testigo1: document.getElementById('testigo1').value,
+          testigo2: document.getElementById('testigo2').value,
+          testigo3: document.getElementById('testigo3').value,
+          testigo4: document.getElementById('testigo4').value,
+          circunstancias: document.getElementById('circunstancias').value,
+          
+          // Datos médicos
+          establecimientoAsistencial: document.getElementById('establecimientoAsistencial').value,
+          ssCodigo: document.getElementById('ssCodigo').value,
+          diagnosticoMedico: document.getElementById('diagnosticoMedico').value,
+          parteCuerpoAfectada: document.getElementById('parteCuerpoAfectada').value,
+          hospitalizacionSelect: document.getElementById('hospitalizacionSelect').value,
+          totalDiasHospitalizacion: document.getElementById('totalDiasHospitalizacion').value,
+          incapacidadSelect: document.getElementById('incapacidadSelect').value,
+          totalDiasIncapacidad: document.getElementById('totalDiasIncapacidad').value,
+          tipoIncapacidad: document.getElementById('tipoIncapacidad').value,
+          causaCierre: document.getElementById('causaCierre').value,
+          anoCierre: document.getElementById('anoCierre').value,
+          mesCierre: document.getElementById('mesCierre').value,
+          diaCierre: document.getElementById('diaCierre').value
+        };
+      }
+
+      function guardarFicha(e) {
+        e.preventDefault();
+        
+        const datos = obtenerDatosFormulario();
+        
+        if (editandoRegistro && registroEditando) {
+          // Actualizar registro existente
+          Object.assign(registroEditando, datos);
+          actualizarFilaTabla(registroEditando);
+          mostrarAlerta('Ficha actualizada correctamente', 'success');
+        } else {
+          // Crear nuevo registro
+          datos.id = Date.now(); // ID único
+          registrosCompletos.push(datos);
+          agregarFilaTabla(datos);
+          mostrarAlerta('Ficha guardada correctamente', 'success');
+        }
+        
+        modalFicha.hide();
+      }
+
+      function agregarFilaTabla(datos) {
+        const fila = document.createElement('tr');
+        fila.dataset.id = datos.id;
+        fila.innerHTML = `
+          <td>${datos.nombres} ${datos.paterno}</td>
+          <td>${datos.curso}</td>
+          <td>${datos.fechaRegistro}</td>
+          <td>${datos.comuna}</td>
+          <td>${datos.ciudad}</td>
+          <td class="acciones-cell">
+            <button class="btn btn-sm btn-outline-danger me-1 btn-exportar-individual" title="Exportar PDF">
+              <i class="bi bi-file-earmark-pdf"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-primary btn-editar" title="Editar ficha">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </td>
+        `;
+        
+        // Agregar event listeners a los botones
+        fila.querySelector('.btn-exportar-individual').addEventListener('click', () => exportarPDFIndividual(datos));
+        fila.querySelector('.btn-editar').addEventListener('click', () => editarFicha(datos));
+        
+        tablaBody.prepend(fila);
+      }
+
+      function actualizarFilaTabla(datos) {
+        const fila = document.querySelector(`tr[data-id="${datos.id}"]`);
+        if (fila) {
+          fila.innerHTML = `
+            <td>${datos.nombres} ${datos.paterno}</td>
+            <td>${datos.curso}</td>
+            <td>${datos.fechaRegistro}</td>
+            <td>${datos.comuna}</td>
+            <td>${datos.ciudad}</td>
+            <td class="acciones-cell">
+              <button class="btn btn-sm btn-outline-danger me-1 btn-exportar-individual" title="Exportar PDF">
+                <i class="bi bi-file-earmark-pdf"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-primary btn-editar" title="Editar ficha">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </td>
+          `;
+          
+          // Reagregar event listeners
+          fila.querySelector('.btn-exportar-individual').addEventListener('click', () => exportarPDFIndividual(datos));
+          fila.querySelector('.btn-editar').addEventListener('click', () => editarFicha(datos));
+        }
+      }
+
+      function editarFicha(datos) {
+        // Buscar el estudiante original
+        const curso = datos.curso;
+        const estudianteOriginal = estudiantesPorCurso[curso]?.find(est => 
+          est.nombre === datos.nombres && est.paterno === datos.paterno
+        );
+        
+        if (estudianteOriginal) {
+          abrirFicha(estudianteOriginal, curso, datos);
+        } else {
+          mostrarAlerta('No se encontró el estudiante original', 'warning');
+        }
+      }
+
+      function exportarFichaActual() {
+        const datos = obtenerDatosFormulario();
+        if (!datos.nombres || !datos.paterno) {
+          mostrarAlerta('Complete los datos básicos del estudiante antes de exportar', 'warning');
+          return;
+        }
+        exportarPDFIndividual(datos);
+      }
+
+      function exportarPDFIndividual(datos) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFontSize(16);
+        doc.text("DECLARACIÓN INDIVIDUAL DE ACCIDENTE ESCOLAR", 50, 20);
+        doc.setFontSize(10);
+
+        let yPosition = 40;
+
+        // Información del establecimiento
+        doc.text("A. INDIVIDUALIZACIÓN DEL ESTABLECIMIENTO", 10, yPosition);
+        yPosition += 10;
+        doc.text(`Establecimiento: Liceo Bicentenario de Excelencia Técnico Puente Rubie`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Ciudad: Chillán`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Comuna: San Nicolás`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Fecha de registro: ${datos.fechaRegistro || 'No especificada'}`, 10, yPosition);
+        yPosition += 15;
+
+        // Información del estudiante
+        doc.text("B. DATOS DEL ESTUDIANTE", 10, yPosition);
+        yPosition += 10;
+        doc.text(`Nombre: ${datos.nombres} ${datos.paterno} ${datos.materno}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Curso: ${datos.curso}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Horario: ${datos.horario || 'No especificado'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Sexo: ${datos.sexo || 'No especificado'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Año nacimiento: ${datos.anoNacimiento || 'No especificado'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Edad: ${datos.edad || 'No especificada'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Dirección: ${datos.calle || ''} ${datos.numero || ''}, ${datos.poblacion || ''}, ${datos.comuna || ''}, ${datos.ciudad || ''}`, 10, yPosition);
+        yPosition += 15;
+
+        // Información del accidente
+        doc.text("C. INFORME SOBRE EL ACCIDENTE", 10, yPosition);
+        yPosition += 10;
+        const fechaAccidente = `${datos.diaAccidente || ''}/${datos.mesAccidente || ''}/${datos.anoAccidente || ''}`;
+        doc.text(`Fecha del accidente: ${fechaAccidente} ${datos.horaAccidente || ''}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Día: ${obtenerNombreDia(datos.diaAccidenteSelect)}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Tipo: ${datos.tipoAccidenteSelect === 'trayecto' ? 'DE TRAYECTO' : 'EN LA ESCUELA'}`, 10, yPosition);
+        yPosition += 8;
+        
+        const testigos = [datos.testigo1, datos.testigo2, datos.testigo3, datos.testigo4].filter(t => t).join(', ');
+        doc.text(`Testigos: ${testigos || 'No hay testigos registrados'}`, 10, yPosition);
+        yPosition += 8;
+        
+        // Circunstancias (puede ser largo, dividir en líneas)
+        const circunstancias = datos.circunstancias || 'No especificado';
+        const lineasCircunstancias = doc.splitTextToSize(`Circunstancias: ${circunstancias}`, 180);
+        doc.text(lineasCircunstancias, 10, yPosition);
+        yPosition += lineasCircunstancias.length * 5 + 10;
+
+        // Verificar si necesitamos nueva página
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+
+        // Naturaleza y consecuencias
+        doc.text("D. NATURALEZA Y CONSECUENCIA DEL ACCIDENTE", 10, yPosition);
+        yPosition += 10;
+        doc.text(`Establecimiento asistencial: ${datos.establecimientoAsistencial || 'No especificado'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`S.S. Código: ${datos.ssCodigo || 'No especificado'}`, 10, yPosition);
+        yPosition += 8;
+        
+        // Diagnóstico (puede ser largo)
+        const diagnostico = datos.diagnosticoMedico || 'No especificado';
+        const lineasDiagnostico = doc.splitTextToSize(`Diagnóstico: ${diagnostico}`, 180);
+        doc.text(lineasDiagnostico, 10, yPosition);
+        yPosition += lineasDiagnostico.length * 5 + 8;
+        
+        doc.text(`Parte del cuerpo afectada: ${datos.parteCuerpoAfectada || 'No especificado'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Hospitalización: ${datos.hospitalizacionSelect === '1' ? 'SI' : 'NO'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Días de hospitalización: ${datos.totalDiasHospitalizacion || '0'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Incapacidad: ${datos.incapacidadSelect === '1' ? 'SI' : 'NO'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Días de incapacidad: ${datos.totalDiasIncapacidad || '0'}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Tipo de incapacidad: ${obtenerTipoIncapacidad(datos.tipoIncapacidad)}`, 10, yPosition);
+        yPosition += 8;
+        doc.text(`Causa de cierre: ${obtenerCausaCierre(datos.causaCierre)}`, 10, yPosition);
+        yPosition += 8;
+        
+        const fechaCierre = `${datos.diaCierre || ''}/${datos.mesCierre || ''}/${datos.anoCierre || ''}`;
+        doc.text(`Fecha de cierre: ${fechaCierre}`, 10, yPosition);
+
+        doc.save(`Declaracion_Accidente_${datos.nombres}_${datos.paterno}.pdf`);
+        mostrarAlerta('PDF exportado correctamente', 'success');
+      }
+
+      function exportarTodosPDF() {
+        if (registrosCompletos.length === 0) {
+          mostrarAlerta('No hay registros para exportar', 'warning');
+          return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        doc.setFontSize(16);
+        doc.text("Registro Médico - Todas las Fichas", 60, 20);
+        doc.setFontSize(10);
+
+        const filas = registrosCompletos.map(registro => [
+          `${registro.nombres} ${registro.paterno}`,
+          registro.curso,
+          registro.fechaRegistro,
+          registro.comuna,
+          registro.ciudad
+        ]);
+
+        doc.autoTable({
+          head: [["Nombre", "Curso", "Fecha", "Comuna", "Ciudad"]],
+          body: filas,
+          startY: 30,
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [13, 110, 253] }
+        });
+
+        doc.save("Registro_Medico_Completo.pdf");
+        mostrarAlerta('Todos los registros exportados correctamente', 'success');
+      }
+
+      // Funciones auxiliares
+      function obtenerNombreDia(valor) {
+        const dias = {
+          '1': 'LUNES',
+          '2': 'MARTES', 
+          '3': 'MIÉRCOLES',
+          '4': 'JUEVES',
+          '5': 'VIERNES',
+          '6': 'SÁBADO',
+          '7': 'DOMINGO'
+        };
+        return dias[valor] || 'No especificado';
+      }
+
+      function obtenerTipoIncapacidad(valor) {
+        const tipos = {
+          '1': 'LEVE TEMPORAL',
+          '3': 'INVALIDEZ PARCIAL',
+          '4': 'INVALIDEZ TOTAL',
+          '5': 'GRAN INVALIDEZ',
+          '6': 'MUERTE'
+        };
+        return tipos[valor] || 'No especificado';
+      }
+
+      function obtenerCausaCierre(valor) {
+        const causas = {
+          '1': 'ALTA MÉDICA',
+          '2': 'INVALIDEZ',
+          '3': 'ABANDONO DE TRATAMIENTO',
+          '4': 'MUERTE'
+        };
+        return causas[valor] || 'No especificado';
+      }
+
+      function mostrarAlerta(mensaje, tipo) {
+        // Crear alerta de Bootstrap
+        const alerta = document.createElement('div');
+        alerta.className = `alert alert-${tipo} alert-dismissible fade show position-fixed`;
+        alerta.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+        alerta.innerHTML = `
+          ${mensaje}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alerta);
+        
+        // Auto-eliminar después de 5 segundos
+        setTimeout(() => {
+          if (alerta.parentNode) {
+            alerta.remove();
+          }
+        }, 5000);
+      }
+
+      // Inicialización
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('Sistema de Registro Médico cargado correctamente');
+      });
+    </script>
+  </body>
+</html>

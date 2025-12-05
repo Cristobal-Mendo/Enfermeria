@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="es" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Estadísticas - Enfermería Escolar</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      body {
+        min-height: 100vh;
+        background-color: #f8f9fa;
+      }
+
+      /* Navbar */
+      .navbar {
+        background-color: #007bff;
+      }
+      .navbar-brand {
+        color: #fff !important;
+        font-weight: bold;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        position: fixed;
+        top: 56px;
+        left: 0;
+        height: calc(100% - 56px);
+        width: 240px;
+        background-color: #0d6efd;
+        color: #fff;
+        padding-top: 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.9);
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        border-radius: 0 25px 25px 0;
+        margin-right: 10px;
+        transition: background 0.3s;
+      }
+
+      .sidebar .nav-link i {
+        margin-right: 10px;
+        font-size: 1.2rem;
+      }
+
+      .sidebar .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: #fff;
+      }
+
+      .sidebar .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.3);
+        color: #fff;
+        font-weight: 500;
+      }
+
+      /* Botón Cerrar sesión */
+      .logout {
+        padding: 1rem 0;
+      }
+
+      .logout-link {
+        display: flex;
+        align-items: center;
+        color: #fff;
+        text-decoration: none;
+        padding: 10px 20px;
+        margin-right: 10px;
+        border-radius: 0 25px 25px 0;
+        transition: background 0.3s ease;
+        background-color: transparent;
+        cursor: pointer;
+      }
+
+      .logout-link i {
+        margin-right: 10px;
+        font-size: 1.2rem;
+      }
+
+      .logout-link:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+
+      /* Contenido principal */
+      .content {
+        margin-left: 240px;
+        margin-top: 56px;
+        padding: 2rem;
+      }
+
+      .card {
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Enfermería Escolar</a>
+      </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div>
+        <ul class="nav flex-column mb-auto">
+          <li><a class="nav-link" href="dashboard.html"><i class="bi bi-house"></i> Dashboard</a></li>
+          <li><a class="nav-link active" href="estadisticas.html"><i class="bi bi-bar-chart"></i> Estadísticas</a></li>
+          <li><a class="nav-link" href="estudiantes.html"><i class="bi bi-person"></i> Estudiantes</a></li>
+          <li><a class="nav-link" href="registro_medico.html"><i class="bi bi-journal-medical"></i> Registro Médico</a></li>
+        </ul>
+      </div>
+
+      <!-- 🔹 Nuevo bloque de cierre de sesión -->
+      <div class="logout">
+        <a class="logout-link" href="../Iniciar Sesion/index.html">
+          <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+        </a>
+      </div>
+    </div>
+
+    <!-- Contenido principal -->
+    <main class="content">
+      <h1 class="h2 mb-4">Estadísticas</h1>
+
+      <!-- Filtros -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Filtros</h5>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Seleccionar mes:</label>
+              <select class="form-select">
+                <option>Enero</option>
+                <option>Febrero</option>
+                <option>Marzo</option>
+                <option>Abril</option>
+                <option>Mayo</option>
+                <option>Junio</option>
+                <option>Julio</option>
+                <option>Agosto</option>
+                <option>Septiembre</option>
+                <option>Octubre</option>
+                <option>Noviembre</option>
+                <option>Diciembre</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tipo de caso:</label>
+              <select class="form-select">
+                <option>Todos</option>
+                <option>Leves</option>
+                <option>Graves</option>
+                <option>Observación</option>
+              </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <button class="btn btn-primary w-100">Aplicar filtros</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjetas resumen -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="card text-white bg-primary">
+            <div class="card-body">
+              <h5 class="card-title">Total de atenciones</h5>
+              <p class="card-text fs-4">124</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-white bg-success">
+            <div class="card-body">
+              <h5 class="card-title">Casos leves</h5>
+              <p class="card-text fs-4">98</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-white bg-warning">
+            <div class="card-body">
+              <h5 class="card-title">Casos en observación</h5>
+              <p class="card-text fs-4">18</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-white bg-danger">
+            <div class="card-body">
+              <h5 class="card-title">Casos graves</h5>
+              <p class="card-text fs-4">8</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Atenciones por mes</h5>
+              <canvas id="graficoMeses" height="150"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Distribución por tipo de caso</h5>
+              <canvas id="graficoTipos" height="150"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+      // Gráfico 1
+      const ctx1 = document.getElementById('graficoMeses');
+      new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'],
+          datasets: [{
+            label: 'Atenciones',
+            data: [12, 20, 18, 25, 30, 28, 22, 35, 40, 38],
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0,123,255,0.2)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      // Gráfico 2
+      const ctx2 = document.getElementById('graficoTipos');
+      new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: ['Leves', 'Observación', 'Graves'],
+          datasets: [{
+            data: [98, 18, 8],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+          }]
+        },
+        options: {
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    </script>
+  </body>
+</html>
